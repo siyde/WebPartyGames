@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Spyfall</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+  </style>
+</head>
+
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-main">Spyfall</div>
+    </div>
+    <div class="header-pill">
+      <span class="header-dot"></span>
+      <span id="headerStatus">Bağlantı bekleniyor…</span>
+    </div>
+  </header>
+
+  <!-- JOIN SCREEN -->
+  <section id="joinScreen" class="screen active">
+    <div class="join-card">
+      <div class="join-title">Odaya bağlan</div>
+      <div class="join-sub">İstersen yeni bir oda aç, istersen arkadaşının odasına katıl.</div>
+
+      <div class="input-row">
+        <label for="nameInput">Takma adın</label>
+        <input type="text" id="nameInput" maxlength="24">
+      </div>
+
+      <div class="input-row">
+        <label for="roomInput">Oda kodu</label>
+        <input type="text" id="roomInput" maxlength="16">
+      </div>
+
+      <div class="join-actions">
+        <button class="btn btn-secondary" onclick="createRoom()">🆕 Create Game</button>
+        <button class="btn btn-primary" onclick="joinExisting()">🚪 Join Game</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOBBY SCREEN -->
+  <section id="lobbyScreen" class="screen">
+    <div class="lobby-left">
+      <div class="card">
+        <div class="card-title">
+          <span>Lobby</span>
+          <span style="font-size:12px;">Oda kodu: <b id="lobbyRoom"></b></span>
+        </div>
+        <div id="lobbyPlayers"></div>
+      </div>
+    </div>
+
+    <div class="lobby-right">
+      <div class="card">
+        <button id="startBtn" class="btn btn-primary btn-wide" disabled onclick="startGame()">
+          🚀 Oyunu Başlat (Host)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="gameScreen" class="screen">
+    <div class="game-main">
+      <div class="card">
+        <div class="role-label">Rolün</div>
+        <div id="roleValue" class="role-value">-</div>
+        <div id="locationInfo"></div>
+        <div id="roleInfo"></div>
+
+        <div id="turnBox" class="turn-indicator"></div>
+
+        <div class="btn-group">
+          <button id="askBtn" class="btn-ghost" onclick="askQuestion()">➜ Sırayı geçir</button>
+          <button id="forceVoteBtn" class="btn-ghost danger" onclick="forceVote()" disabled>
+            ⚠ Early Voting (host)
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="playersGridGame" class="player-grid"></div>
+      </div>
+    </div>
+
+    <div class="game-side">
+      <div class="card">
+        <div id="chatLog"></div>
+        <div class="chat-input-row">
+          <input id="chatInput" type="text" maxlength="220">
+          <button class="btn-chat" onclick="sendChat()">Gönder</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VOTING -->
+  <section id="votingScreen" class="screen">
+    <div class="overlay-card">
+      <h2>🗳 Oylama</h2>
+      <div id="voteButtons" class="vote-buttons"></div>
+    </div>
+  </section>
+
+  <!-- SPY GUESS -->
+  <section id="guessScreen" class="screen">
+    <div class="overlay-card">
+      <h2>🕵️ Spy Tahmini</h2>
+      <div id="guessButtons" class="guess-buttons"></div>
+    </div>
+  </section>
+
+  <!-- GAME OVER -->
+  <section id="gameOverScreen" class="screen">
+    <div class="overlay-card">
+      <div id="goTitle"></div>
+      <div id="goDetail"></div>
+      <button onclick="location.reload()">🔁 Yeni oyun</button>
+    </div>
+  </section>
+</div>
+
+<script>
+let ws = null;
+let pid = null;
+let roomId = null;
+let players = {};
+let myInfo = null;
+let currentTurn = null;
+let isHost = false;
+
+function setStatus(t){ document.getElementById("headerStatus").textContent=t; }
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function createRoom(){
+  const n=document.getElementById("nameInput").value.trim();
+  if(!n)return alert("İsim gerekli");
+  const c="R"+Math.random().toString(36).substring(2,6).toUpperCase();
+  document.getElementById("roomInput").value=c;
+  connect(c,n);
+}
+
+function joinExisting(){
+  const n=document.getElementById("nameInput").value.trim();
+  const r=document.getElementById("roomInput").value.trim();
+  if(!n||!r)return alert("İsim ve oda kodu gerekli");
+  connect(r,n);
+}
+
+function connect(room,name){
+  roomId=room;
+  const proto=location.protocol==="https:"?"wss":"ws";
+  const host=location.host||"localhost:8000";
+  ws=new WebSocket(`${proto}://${host}/ws/spyfall`);
+
+  ws.onopen=()=>{
+    setStatus("Bağlandı");
+    ws.send(JSON.stringify({type:"join",roomId:room,name}));
+  };
+
+  ws.onmessage=e=>handle(JSON.parse(e.data));
+  ws.onclose=()=>setStatus("Bağlantı kapandı");
+}
+
+function handle(d){
+  if(d.type==="joined"){
+    pid=d.pid;
+    document.getElementById("lobbyRoom").textContent=roomId;
+    showScreen("lobbyScreen");
+  }
+
+  if(d.type==="lobby_update"){
+    players=d.players;
+    isHost=d.host===pid;
+    const c=document.getElementById("lobbyPlayers");
+    c.innerHTML="";
+    Object.entries(players).forEach(([id,p])=>{
+      c.innerHTML+=`<div>${p.name} ${id===pid?"(sen)":""} ${p.is_host?"👑":""}</div>`;
+    });
+    document.getElementById("startBtn").disabled=!isHost;
+  }
+
+  if(d.type==="state"){
+    players=d.players;
+    myInfo=d.me;
+    currentTurn=d.turn;
+    isHost=d.host===pid;
+    showScreen("gameScreen");
+    updateUI();
+  }
+
+  if(d.type==="chat_message"){
+    const l=document.getElementById("chatLog");
+    l.innerHTML+=`<div><b>${players[d.from]?.name}:</b> ${d.text}</div>`;
+    l.scrollTop=l.scrollHeight;
+  }
+
+  if(d.type==="voting_started"){ renderVoting(); showScreen("votingScreen"); }
+  if(d.type==="spy_guess_start"){ renderGuess(d.locations); showScreen("guessScreen"); }
+  if(d.type==="game_over"){
+    document.getElementById("goTitle").textContent=d.winner==="SPY"?"Spy kazandı":"Siviller kazandı";
+    document.getElementById("goDetail").textContent="Mekân: "+d.location;
+    showScreen("gameOverScreen");
+  }
+}
+
+function startGame(){ ws.send(JSON.stringify({type:"start_game"})); }
+function sendChat(){
+  const i=document.getElementById("chatInput");
+  if(i.value.trim()) ws.send(JSON.stringify({type:"chat",text:i.value.trim()}));
+  i.value="";
+}
+function askQuestion(){ ws.send(JSON.stringify({type:"ask"})); }
+function forceVote(){ if(isHost) ws.send(JSON.stringify({type:"force_vote"})); }
+
+function renderVoting(){
+  const a=document.getElementById("voteButtons");
+  a.innerHTML="";
+  Object.entries(players).forEach(([id,p])=>{
+    if(!p.alive||id===pid)return;
+    const b=document.createElement("button");
+    b.textContent=p.name;
+    b.onclick=()=>{ ws.send(JSON.stringify({type:"vote",target:id})); };
+    a.appendChild(b);
+  });
+}
+
+function renderGuess(locs){
+  const a=document.getElementById("guessButtons");
+  a.innerHTML="";
+  locs.forEach(l=>{
+    const b=document.createElement("button");
+    b.textContent=l;
+    b.onclick=()=>ws.send(JSON.stringify({type:"spy_guess",guess:l}));
+    a.appendChild(b);
+  });
+}
+
+function updateUI(){
+  document.getElementById("roleValue").textContent=myInfo.role==="SPY"?"SPY":"Sivil";
+}
+</script>
+</body>
+</html>

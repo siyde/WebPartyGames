@@ -1,0 +1,783 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>Codenames (Lobby + Game UI)</title>
+<style>
+:root {
+  --red: #f97373;
+  --blue: #60a5fa;
+  --muted: #9ca3af;
+  --text: #e5e7eb;
+  --bg-deep: #020617;
+  --bg-soft: #0b1220;
+  --accent: #6366f1;
+  --accent-soft: rgba(99,102,241,0.18);
+  --border-soft: rgba(148,163,184,0.5);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 0% 0%, #1d1b3f, #020617),
+    radial-gradient(circle at 100% 100%, #0f766e, #020617);
+  color: var(--text);
+}
+
+/* Ana kart (her ekran bir card zaten) */
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 1120px;
+  border-radius: 28px;
+  padding: 22px 24px 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(15,23,42,0.96),
+    rgba(15,23,42,0.9),
+    rgba(30,64,175,0.8)
+  );
+  border: 1px solid var(--border-soft);
+  box-shadow:
+    0 22px 45px rgba(15,23,42,0.9),
+    0 0 0 1px rgba(15,23,42,0.9);
+  overflow: hidden;
+}
+
+/* Hafif glow efektleri */
+.card::before,
+.card::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(22px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.card::before {
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(99,102,241,0.7), transparent);
+  top: -90px;
+  right: -80px;
+}
+.card::after {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(56,189,248,0.6), transparent);
+  bottom: -80px;
+  left: -60px;
+}
+
+/* İçerik layer’ı */
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Layout yardımcıları */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .row {
+    align-items: stretch;
+  }
+}
+
+/* Başlık & üst bar */
+h1, h2, h3 {
+  color: #e5e7eb;
+}
+
+h1 {
+  font-size: 26px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+h3 {
+  font-size: 18px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Küçük etiketler */
+.badge {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.7);
+  background: rgba(15,23,42,0.85);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.7);
+  background: radial-gradient(circle at 0 0, rgba(148,163,184,0.2), rgba(15,23,42,0.9));
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+/* Input & select & buttonlar */
+input,
+select,
+button {
+  font-size: 14px;
+  border-radius: 999px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-soft);
+  background: radial-gradient(circle at 0 0, rgba(15,23,42,0.95), rgba(15,23,42,0.9));
+  color: var(--text);
+  outline: none;
+}
+
+input::placeholder {
+  color: rgba(156,163,175,0.9);
+}
+
+input[type="number"] {
+  border-radius: 999px;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+  background: #020617;
+}
+
+/* Butonlar */
+.btn {
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 9px 16px;
+  border: 1px solid rgba(148,163,184,0.8);
+  background: rgba(15,23,42,0.9);
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.btn.primary {
+  background: radial-gradient(circle at 0 0, #6366f1, #4f46e5);
+  border-color: rgba(129,140,248,0.9);
+  color: #f9fafb;
+  box-shadow: 0 10px 25px rgba(79,70,229,0.55);
+}
+
+.btn.ghost {
+  background: rgba(15,23,42,0.5);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(15,23,42,0.9);
+}
+
+.btn.primary:hover:not(:disabled) {
+  box-shadow: 0 14px 36px rgba(79,70,229,0.7);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(15,23,42,0.8);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Küçük buton grupları (takım / rol seçimi vs.) */
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Ekran geçişleri */
+.hidden {
+  display: none !important;
+}
+
+/* Sayaçlar, takım renkleri */
+.countRed {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.countBlue {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.turn-red {
+  background: linear-gradient(90deg, rgba(248,113,113,0.14), transparent);
+}
+.turn-blue {
+  background: linear-gradient(90deg, rgba(96,165,250,0.16), transparent);
+}
+
+/* Oyun header barı */
+.game-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: radial-gradient(circle at 0 0, rgba(15,23,42,0.95), rgba(15,23,42,0.9));
+  border: 1px solid rgba(148,163,184,0.55);
+}
+
+/* Clue alanı */
+.clue-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.clue-row > input {
+  flex: 1 1 180px;
+}
+
+/* Oyuncu listeleri / lobideki paneller */
+.lobby-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.8fr);
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.lobby-box {
+  background: radial-gradient(circle at 0 0, rgba(15,23,42,0.96), rgba(15,23,42,0.9));
+  border-radius: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148,163,184,0.45);
+}
+
+.lobby-box h4 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.player-pill {
+  font-size: 13px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.55);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 4px 2px 0;
+}
+
+/* Oyun tahtası */
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .board {
+    grid-template-columns: repeat(4, minmax(90px, 1fr));
+  }
+}
+
+.tile {
+  padding: 12px;
+  border-radius: 16px;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(148,163,184,0.4);
+  background: radial-gradient(circle at 0 0, rgba(15,23,42,0.96), rgba(15,23,42,0.88));
+  color: #e5e7eb;
+  user-select: none;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    filter 0.15s ease;
+}
+
+.tile.clickable {
+  cursor: pointer;
+}
+
+.tile:hover.tile.clickable {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15,23,42,0.9);
+}
+
+/* Açılınca / disable durumları */
+.tile.disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+  opacity: 0.95;
+}
+
+.tile.revealed {
+  opacity: 1;
+}
+
+/* Renk tipleri */
+.red {
+  background: radial-gradient(circle at 0 0, rgba(248,113,113,0.95), rgba(127,29,29,0.9));
+  border-color: rgba(248,113,113,0.9);
+  color: #111827;
+}
+.blue {
+  background: radial-gradient(circle at 0 0, rgba(96,165,250,0.95), rgba(30,64,175,0.9));
+  border-color: rgba(96,165,250,0.9);
+  color: #0b1120;
+}
+.neut {
+  background: radial-gradient(circle at 0 0, rgba(148,163,184,0.85), rgba(55,65,81,0.95));
+  border-color: rgba(148,163,184,0.9);
+  color: #020617;
+}
+.ass {
+  background: radial-gradient(circle at 0 0, #0f172a, #000000);
+  border-color: #000000;
+  color: #f9fafb;
+}
+
+/* Küçük helper'lar */
+.text-right {
+  text-align: right;
+}
+.text-center {
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- GİRİŞ -->
+<section id="scr-home" class="card">
+  <div class="row">
+    <h2 style="margin:0">Codenames</h2>
+    <span class="pill">Sunucu: <b id="ipBadge"></b></span>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button id="goCreate" class="btn primary">Oda Oluştur</button>
+    <button id="goJoin" class="btn ghost">Odaya Katıl</button>
+  </div>
+</section>
+
+<!-- ODA OLUŞTUR -->
+<section id="scr-create" class="card hidden">
+  <div class="row">
+    <button class="btn ghost" id="back1">← Geri</button>
+    <h3 style="margin:0">Oda Oluştur</h3>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="roomCreate" placeholder="oda id">
+    <input id="nameCreate" placeholder="isim">
+    <button id="btnCreate" class="btn primary">Oluştur ve Gir</button>
+  </div>
+</section>
+
+<!-- ODAYA KATIL -->
+<section id="scr-join" class="card hidden">
+  <div class="row">
+    <button class="btn ghost" id="back2">← Geri</button>
+    <h3 style="margin:0">Odaya Katıl</h3>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="roomJoin" placeholder="oda id">
+    <input id="nameJoin" placeholder="isim">
+    <button id="btnJoin" class="btn primary">Katıl</button>
+  </div>
+</section>
+
+<!-- LOBİ — sade, aynı stil -->
+<section id="scr-lobby" class="card hidden">
+  <div class="row">
+    <h3 style="margin:0">Lobi</h3>
+    <div id="lobbyMsg" class="muted"></div>
+  </div>
+  <div class="row" style="gap:20px">
+    <div class="col" style="flex:1">
+      <b>Oyuncular</b>
+      <div id="players" class="col"></div>
+    </div>
+    <div class="col" style="flex:1">
+      <b>Takım / Rol Seç</b>
+      <div class="row">
+        <select id="selTeam"><option value="red">Kırmızı</option><option value="blue">Mavi</option></select>
+        <select id="selRole"><option value="operative">Operatif</option><option value="spymaster">Spymaster</option></select>
+        <button id="saveTR" class="btn primary">Kaydet</button>
+      </div>
+      <div class="muted">Her takımda yalnız 1 spymaster olabilir.</div>
+      <button id="startGame" class="btn">Oyunu Başlat</button>
+    </div>
+  </div>
+</section>
+
+<!-- OYUN — birebir senin görünüm -->
+<section id="scr-game" class="card hidden">
+  <header class="top">
+    <div class="row">
+      <button id="leave" class="btn ghost">← Çık</button>
+      <span id="meBadge" class="pill"></span>
+      <span id="turnBadge" class="badge"></span>
+    </div>
+    <div class="counts">
+      <span class="countRed">🔴 <b id="countRed">9</b></span>
+      <span class="countBlue">🔵 <b id="countBlue">8</b></span>
+      <span class="pill">İpucu: <b id="clueNow">—</b></span>
+      <span class="pill">Kalan tahmin: <b id="guessLeft">0</b></span>
+    </div>
+  </header>
+
+  <div class="row" style="margin-top:10px">
+    <input id="clueWord" placeholder="İpucu (sadece spymaster)" style="flex:1">
+    <input id="clueCount" type="number" min="0" max="9" value="1" style="width:110px">
+    <button id="sendClue" class="btn">İpucu Gönder</button>
+    <button id="endTurn" class="btn">Turu Bitir</button>
+  </div>
+  <div class="muted" id="tipText" style="margin-top:6px"></div>
+  <div id="board" class="board"></div>
+</section>
+
+<script>
+const proto = location.protocol === "https:" ? "wss" : "ws";
+const WS_URL = proto + "://" + location.host + "/ws/codenames";
+
+document.getElementById("ipBadge").textContent = location.host;
+
+let ws = null;
+let pid = null;
+let roomId = null;
+let myTeam = null;
+let myRole = null;
+let currentTurn = "red";
+
+// === EKRAN YÖNETİMİ ===
+const scr = id => document.getElementById(id);
+const SCREENS = ["scr-home", "scr-create", "scr-join", "scr-lobby", "scr-game"];
+
+function goto(id) {
+  SCREENS.forEach(s => scr(s).classList.add("hidden"));
+  scr(id).classList.remove("hidden");
+}
+
+// Menü butonları
+document.getElementById("goCreate").onclick = () => goto("scr-create");
+document.getElementById("goJoin").onclick   = () => goto("scr-join");
+document.getElementById("back1").onclick    = () => goto("scr-home");
+document.getElementById("back2").onclick    = () => goto("scr-home");
+
+// === WEBSOCKET BAĞLANTISI ===
+function connect(room, name, mode = "join") {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      type: "join",
+      roomId: room,
+      name,
+      mode         // "create" veya "join"
+    }));
+  };
+
+  ws.onclose = () => {
+    console.log("ws kapandı");
+  };
+
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+
+    // ---- HATA DURUMLARI (oda yok, şifre vs.) ----
+    if (m.type === "join_error") {
+      if (m.reason === "no_such_room") {
+        alert("Böyle bir oda yok, önce oluşturman gerekiyor.");
+      } else if (m.reason === "wrong_password_or_key") {
+        alert("Şifre veya davet anahtarı hatalı.");
+      } else {
+        alert("Odaya katılamadın.");
+      }
+      goto("scr-home");
+      return;
+    }
+
+    if (m.type === "info") {
+      // sunucudan gelen bilgi mesajları (örn. start_game hatası)
+      alert(m.msg);
+      return;
+    }
+
+    // ---- LOBBY'YE GİRİLDİ ----
+    if (m.type === "joined") {
+      pid = m.pid;
+      goto("scr-lobby");
+      return;
+    }
+
+    // ---- LOBBY DURUMU (oyuncu listesi) ----
+    if (m.type === "lobby_state") {
+      const list = scr("players");
+      list.innerHTML = "";
+
+      Object.entries(m.state.players).forEach(([id, p]) => {
+        const row = document.createElement("div");
+        row.textContent =
+          `${p.name}${id === pid ? " (sen)" : ""} — ${p.team || "-"} / ${p.role || "-"}`;
+        list.appendChild(row);
+
+        if (id === pid) {
+          myTeam = p.team;
+          myRole = p.role;
+        }
+      });
+
+      scr("lobbyMsg").textContent =
+        "Başlatmak için her takımda 1 spymaster ve en az 1 oyuncu olmalı.";
+      return;
+    }
+
+    // ---- SADECE BENİM TAKIM/ROL GÜNCELLEMEM ----
+    if (m.type === "you") {
+      myTeam = m.team;
+      myRole = m.role;
+      return;
+    }
+
+    // ---- OYUN DURUMU (board, sıra, ipucu) ----
+    if (m.type === "state") {
+      if (m.you) {
+        myTeam = m.you.team;
+        myRole = m.you.role;
+      }
+
+      goto("scr-game");
+
+      currentTurn = m.state.turn;
+      const tb = scr("turnBadge");
+      tb.className = "badge " + (currentTurn === "red" ? "turnRed" : "turnBlue");
+      tb.textContent = "Sıra: " + currentTurn.toUpperCase();
+
+      scr("clueNow").textContent   = m.state.clue.word   || "—";
+      scr("guessLeft").textContent = m.state.guessesLeft;
+
+      updateCounts(m.state);
+      renderBoard(m.state);
+      setControls();
+      return;
+    }
+
+    // ---- OYUN BİTTİ ----
+    if (m.type === "result") {
+      alert(m.msg);
+      goto("scr-home");
+      return;
+    }
+  };
+}
+
+// === BUTONLAR (CREATE / JOIN / ROL / START) ===
+
+// Oda oluştur
+document.getElementById("btnCreate").onclick = () => {
+  const room = scr("roomCreate").value.trim();
+  const name = scr("nameCreate").value.trim() || "anon";
+  if (!room) return;
+  roomId = room;
+  connect(room, name, "create");
+};
+
+// Odaya katıl
+document.getElementById("btnJoin").onclick = () => {
+  const room = scr("roomJoin").value.trim();
+  const name = scr("nameJoin").value.trim() || "anon";
+  if (!room) return;
+  roomId = room;
+  connect(room, name, "join");
+};
+
+// Takım / rol kaydet
+document.getElementById("saveTR").onclick = () => {
+  const team = scr("selTeam").value;
+  const role = scr("selRole").value;
+  if (!ws) return;
+  ws.send(JSON.stringify({ type: "set_team_role", team, role }));
+};
+
+// Oyunu başlat
+document.getElementById("startGame").onclick = () => {
+  if (!ws) return;
+  ws.send(JSON.stringify({ type: "start_game" }));
+};
+
+// Oyundan çık
+scr("leave").onclick = () => {
+  try { ws && ws.close(); } catch (e) {}
+  ws = null;
+  pid = null;
+  roomId = null;
+  myTeam = null;
+  myRole = null;
+  goto("scr-home");
+};
+
+// === OYUN LOGİĞİ (board, ipucu, kontroller) ===
+
+function updateCounts(state) {
+  const totalR = state.colors.filter(c => c === "red").length;
+  const totalB = state.colors.filter(c => c === "blue").length;
+  const revR = state.revealed.filter(i => state.colors[i] === "red").length;
+  const revB = state.revealed.filter(i => state.colors[i] === "blue").length;
+  scr("countRed").textContent  = totalR - revR;
+  scr("countBlue").textContent = totalB - revB;
+}
+
+function canGuess() {
+  return myRole === "operative" && myTeam === currentTurn;
+}
+
+function canClue() {
+  return myRole === "spymaster" && myTeam === currentTurn;
+}
+
+function setControls() {
+  scr("meBadge").textContent =
+    `Sen: ${myTeam ? myTeam.toUpperCase() : "-"} / ${myRole || "-"}`;
+
+  const isMyTurn = myTeam === currentTurn;
+  const iCanClue = canClue();
+
+  const clueWordInput  = scr("clueWord");
+  const clueCountInput = scr("clueCount");
+  const sendClueButton = scr("sendClue");
+
+  if (iCanClue) {
+    clueWordInput.classList.remove("hidden");
+    clueCountInput.classList.remove("hidden");
+    sendClueButton.classList.remove("hidden");
+  } else {
+    clueWordInput.classList.add("hidden");
+    clueCountInput.classList.add("hidden");
+    sendClueButton.classList.add("hidden");
+  }
+
+  scr("endTurn").disabled = !isMyTurn;
+
+  scr("tipText").textContent = iCanClue
+    ? "Takımına bir ipucu ve tahmin sayısı ver."
+    : (canGuess()
+        ? "Takımının ipucuna göre bir kelime seç."
+        : "Şu an rakip takımın sırası.");
+}
+
+function renderBoard(state) {
+  const boardEl = scr("board");
+  boardEl.innerHTML = "";
+
+  const bg = { red: "#ffbcbc", blue: "#bcd3ff", neut: "#eaeaea", ass: "#222" };
+  const fg = { ass: "#fff" };
+
+  state.words.forEach((w, i) => {
+    const d = document.createElement("div");
+    d.className = "tile";
+
+    const revealed = state.revealed.includes(i);
+    let colorKey = null;
+
+    if (revealed) {
+      colorKey = state.colors[i];
+    }
+    if (myRole === "spymaster") {
+      colorKey = state.colors[i];
+    }
+    if (colorKey) {
+      d.style.background = bg[colorKey];
+      d.style.color = fg[colorKey] || "#222";
+    }
+
+    d.textContent = w;
+
+    if (canGuess() && !revealed) {
+      d.classList.add("clickable");
+      d.onclick = () => {
+        ws.send(JSON.stringify({ type: "guess", idx: i }));
+      };
+    } else {
+      d.classList.add("disabled");
+    }
+
+    boardEl.appendChild(d);
+  });
+}
+
+// İpucu gönder
+scr("sendClue").onclick = () => {
+  if (!canClue()) return;
+  const word  = scr("clueWord").value.trim();
+  const count = parseInt(scr("clueCount").value, 10) || 0;
+  ws.send(JSON.stringify({ type: "clue", word, count }));
+  scr("clueWord").value = "";
+};
+
+// Turu bitir
+scr("endTurn").onclick = () => {
+  if (myTeam === currentTurn && ws) {
+    ws.send(JSON.stringify({ type: "end_turn" }));
+  }
+};
+</script>
+
+</body></html>

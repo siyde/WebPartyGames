@@ -1,0 +1,897 @@
+/* son hal */
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Pictionary Neon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#111827;
+    --bg-panel:#020617;
+    --bg-panel-soft:#0b1120;
+    --accent:#f97316;
+    --accent2:#22c55e;
+    --border:#1f2937;
+    --muted:#9ca3af;
+    --text-main:#f9fafb;
+  }
+
+  *{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+
+  body{
+    min-height:100vh;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      linear-gradient(0deg,#020617 0,#020617 4px,#020617 4px,#020617 8px),
+      repeating-linear-gradient(90deg,#020617 0,#020617 8px,#030712 8px,#030712 16px);
+    color:var(--text-main);
+  }
+
+  .hidden{display:none!important;}
+
+  /* OUTER FRAME - ARCADE KABİN */
+  .outer{
+    width:100%;
+    max-width:1180px;
+    border-radius:16px;
+    padding:18px 18px 16px;
+    background:var(--bg-panel-soft);
+    border:3px solid #000;
+    box-shadow:
+      0 0 0 4px #000,
+      0 0 0 5px #4b5563,
+      0 16px 40px rgba(0,0,0,.85);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .screen{position:relative;z-index:1;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .center{text-align:center;}
+
+  /* BADGE / TITLE */
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    padding:4px 10px;
+    border-radius:999px;
+    background:#000;
+    border:2px solid #4b5563;
+    font-size:10px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:#e5e7eb;
+  }
+  .badge span{
+    width:8px;
+    height:8px;
+    border-radius:2px;
+    margin-right:6px;
+    background:var(--accent2);
+  }
+
+  h1{
+    font-family:"Press Start 2P",system-ui;
+    font-size:20px;
+    letter-spacing:.18em;
+    text-align:center;
+    margin:10px 0 4px;
+    color:var(--accent);
+  }
+
+  .title-sub{
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+
+  .muted{color:var(--muted);font-size:11px;}
+
+  /* CARDS */
+  .card{
+    background:var(--bg-panel);
+    border-radius:12px;
+    padding:14px 14px;
+    border:2px solid var(--border);
+  }
+
+  .card-dark{
+    background:#020617;
+    border-radius:12px;
+    padding:12px 14px;
+    border:2px solid #000;
+  }
+
+  /* BUTTONS */
+  .btn{
+    padding:8px 13px;
+    border-radius:999px;
+    border:2px solid #000;
+    background:#111827;
+    cursor:pointer;
+    font-size:13px;
+    color:#e5e7eb;
+    font-weight:500;
+    box-shadow:0 3px 0 #000;
+    transition:transform .06s ease, box-shadow .06s ease, background .1s ease;
+  }
+  .btn.primary{
+    background:var(--accent);
+    color:#111827;
+  }
+  .btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 4px 0 #000;
+  }
+  .btn:active{
+    transform:translateY(1px);
+    box-shadow:0 1px 0 #000;
+  }
+  .btn:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+    box-shadow:0 1px 0 #000;
+  }
+  .btn.subtle{
+    font-size:12px;
+    padding:6px 10px;
+    background:#0f172a;
+    color:#e5e7eb;
+  }
+
+  .back-btn{
+    border-radius:999px;
+    border:2px solid #000;
+    padding:6px 12px;
+    font-size:12px;
+    cursor:pointer;
+    background:#111827;
+    color:#e5e7eb;
+    box-shadow:0 3px 0 #000;
+    margin-bottom:6px;
+  }
+
+  /* INPUTS */
+  input{
+    padding:7px 10px;
+    border-radius:999px;
+    border:2px solid #000;
+    font-size:13px;
+    background:#020617;
+    color:#e5e7eb;
+    outline:none;
+  }
+  input:focus{
+    border-color:var(--accent2);
+    background:#030712;
+  }
+  label{
+    font-size:11px;
+    color:var(--muted);
+    padding-left:2px;
+    margin-bottom:3px;
+    display:block;
+  }
+
+  /* PILLS */
+  .pill-light{
+    border-radius:999px;
+    padding:4px 10px;
+    background:#000;
+    border:2px solid #4b5563;
+    font-size:10px;
+    color:#e5e7eb;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+  }
+  .pill-dark{
+    border-radius:999px;
+    padding:4px 10px;
+    background:#111827;
+    border:2px solid #000;
+    font-size:11px;
+    color:#e5e7eb;
+  }
+
+  /* GRID LAYOUT */
+  #gameLayout{
+    display:grid;
+    grid-template-columns:minmax(0,3.1fr) minmax(0,2.2fr);
+    gap:14px;
+    margin-top:10px;
+  }
+  @media(max-width:900px){
+    #gameLayout{grid-template-columns:1fr;}
+  }
+
+  #left{display:flex;flex-direction:column;gap:12px;min-width:0;}
+  #sidebar{display:flex;flex-direction:column;gap:12px;min-width:0;}
+
+  #toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  #toolbar-left,#toolbar-right{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  #timer{font-size:12px;font-weight:600;}
+
+  /* CANVAS — BEYAZ TUVAL */
+  #c{
+    border-radius:10px;
+    background:#ffffff; /* TUVALİ BEYAZ YAPTIK */
+    box-shadow:
+      0 0 0 2px #000,
+      inset 0 0 0 1px #1f2937;
+    touch-action:none;
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  /* DRAWER TOOLS */
+  #drawerTools{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    margin-top:8px;
+    font-size:11px;
+  }
+  #drawerTools input[type="range"]{
+    width:140px;
+  }
+
+  /* PLAYERS */
+  #players{
+    max-height:220px;
+    overflow-y:auto;
+    font-size:12px;
+  }
+  #players .me{
+    font-weight:600;
+    color:var(--accent2);
+  }
+  #players .crown{
+    font-size:13px;
+    margin-left:3px;
+  }
+
+  /* CHAT LOG */
+  #log{
+    height:220px;
+    overflow-y:auto;
+    border-radius:10px;
+    background:#020617;
+    border:2px solid #000;
+    box-shadow:inset 0 0 0 1px #1f2937;
+    padding:6px 7px;
+    font-size:11px;
+    color:#e5e7eb;
+    white-space:pre-wrap;
+  }
+
+  /* WORD + ROLE */
+  #word{
+    font-family:"Press Start 2P",system-ui;
+    font-size:15px;
+    letter-spacing:.25em;
+    text-align:center;
+    padding:8px 4px 4px;
+    color:var(--accent2);
+    overflow:hidden;
+  }
+
+  #roleInfo{
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:4px;
+  }
+
+  #chatForm{display:flex;gap:8px;margin-top:8px;}
+  #chatInput{flex:1;font-size:12px;}
+
+  #error,#errorJoin{
+    margin-top:6px;
+    font-size:11px;
+    color:#f97373;
+  }
+
+  /* WORD CHOICE MODAL */
+  #choiceModal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.85);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+  }
+  #choiceModal .card{
+    max-width:420px;
+    width:90%;
+  }
+  #choiceModal h3{
+    font-family:"Press Start 2P",system-ui;
+    font-size:14px;
+    letter-spacing:.12em;
+    text-align:center;
+    margin-bottom:8px;
+    color:var(--accent);
+  }
+  #choiceCountdown{
+    margin-top:6px;
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .choice-btn{
+    min-width:90px;
+    font-size:11px;
+  }
+</style>
+
+</head>
+<body>
+  <div class="outer">
+    <!-- ANA MENÜ -->
+    <section id="screen-home" class="screen">
+      <div class="center">
+        <div class="badge"><span></span>ONLINE ÇİZİM · ODA SİSTEMİ</div>
+        <h1>PICTIONARY</h1>
+        <p class="title-sub">Arkadaşlarınla aynı odaya gir, sırayla çiz ve kelimeyi tahmin et.</p>
+        <p class="muted" style="margin-bottom:12px;">Gameverse Arcade · Neon arayüz · Çok oyunculu</p>
+        <div class="row" style="justify-content:center;margin-top:4px;">
+          <button id="goCreate" class="btn primary">Oda Oluştur</button>
+          <button id="goJoin" class="btn">Odaya Katıl</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ODA OLUŞTUR -->
+    <section id="screen-create" class="screen hidden">
+      <button class="back-btn" id="backFromCreate">← Ana menü</button>
+      <div class="card" style="margin-top:4px;">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div class="pill-light" style="margin-bottom:4px;">Oda Oluştur</div>
+            <div class="muted">Oda ID, ismin ve opsiyonel şifre belirle. Kodunu arkadaşlarınla paylaş.</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <div style="flex:1;min-width:200px;">
+            <label>Oda ID</label>
+            <input id="roomCreate" placeholder="örn: sinif101">
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <label>İsmin</label>
+            <input id="nameCreate" placeholder="örn: Ali">
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <label>Şifre <span class="muted">(opsiyonel)</span></label>
+            <input id="pwdCreate" placeholder="oda şifresi">
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button id="btnCreate" class="btn primary">Oluştur ve Gir</button>
+        </div>
+        <div id="error" class="hidden"></div>
+      </div>
+    </section>
+
+    <!-- ODAYA KATIL -->
+    <section id="screen-join" class="screen hidden">
+      <button class="back-btn" id="backFromJoin">← Ana menü</button>
+      <div class="card" style="margin-top:4px;">
+        <div class="pill-light" style="margin-bottom:4px;">Odaya Katıl</div>
+        <div class="muted">Arkadaşının verdiği oda ID’sini ve adını gir. Davet linkiyle geldiysen URL’de room/key zaten hazır olur.</div>
+        <div class="row" style="margin-top:12px;">
+          <div style="flex:1;min-width:200px;">
+            <label>Oda ID</label>
+            <input id="roomJoin" placeholder="örn: sinif101">
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <label>İsmin</label>
+            <input id="nameJoin" placeholder="örn: Ayşe">
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <label>Şifre <span class="muted">(varsa)</span></label>
+            <input id="pwdJoin" placeholder="oda şifresi">
+          </div>
+        </div>
+        <p class="muted" style="margin-top:6px;">Davet linki kullanıyorsan şifre girmene gerek yok.</p>
+        <div class="row" style="margin-top:10px;">
+          <button id="btnJoin" class="btn primary">Katıl</button>
+        </div>
+        <div id="errorJoin" class="hidden"></div>
+      </div>
+    </section>
+
+    <!-- OYUN -->
+    <section id="screen-game" class="screen hidden">
+      <div id="gameLayout">
+        <!-- SOL TARAF: Canvas + toolbar -->
+        <div id="left">
+          <div class="card-dark">
+            <div id="toolbar">
+              <div id="toolbar-left">
+                <button id="leave" class="btn ghost">← Oyundan Çık</button>
+                <div id="roomBadge" class="pill-dark">Oda: -</div>
+                <div id="roundBadge" class="pill-dark">Tur: 1 / 10</div>
+              </div>
+              <div id="toolbar-right">
+                <span id="timer" class="pill-dark">⏱ —</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-dark">
+            <canvas id="c" width="800" height="560"></canvas>
+            <div id="drawerTools" class="hidden">
+              <label>Kalınlık
+                <input id="w" type="range" min="1" max="18" value="4">
+              </label>
+              <div>
+                <label>Renk</label>
+                <input id="color" type="color" value="#000000" style="width:80px;">
+              </div>
+              <button id="clearBtn" class="btn subtle">Tahtayı Temizle</button>
+              <button id="undoBtn" class="btn subtle">Geri Al</button>
+              <label style="display:flex;align-items:center;gap:4px;">
+                <input type="checkbox" id="eraser"> Silgi
+              </label>
+              <button id="hintBtn" class="btn subtle">İpucu Ver</button>
+              <span class="muted" id="hintInfo">Her tur 1 kez, 3 puan gider.</span>
+            </div>
+          </div>
+
+          <div id="invite" class="card hidden">
+            <div style="margin-bottom:6px;"><b>Davet linki</b></div>
+            <input id="inviteLink" style="width:100%;font-size:12px;" readonly>
+            <div class="row" style="margin-top:6px;align-items:center;">
+              <button id="copyInvite" class="btn subtle">Linki Kopyala</button>
+              <span class="muted">Bu linkle gelenler şifresiz girebilir.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAĞ TARAF: Kelime, oyuncular, chat -->
+        <div id="sidebar">
+          <div class="card">
+            <div id="word">_ _ _ _</div>
+            <div id="roleInfo">Rol: -</div>
+          </div>
+
+          <div id="players" class="card" style="font-size:13px;"></div>
+
+          <div class="card">
+            <div id="log"></div>
+            <form id="chatForm">
+              <input id="chatInput" placeholder="tahmin yaz..." autocomplete="off">
+              <button class="btn primary" type="submit">Gönder</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kelime seçimi modal -->
+    <div id="choiceModal" class="hidden">
+      <div class="card" style="max-width:420px;width:90%;text-align:center;">
+        <h3 style="margin-bottom:8px;">Bir kelime seç</h3>
+        <div id="choicesWrap" class="row" style="justify-content:center;margin:8px 0;"></div>
+        <div id="choiceCountdown" class="muted">10</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================== WS URL ================== */
+const proto = location.protocol === "https:" ? "wss" : "ws";
+const WS_URL = proto + "://" + location.host + "/ws/pictionary";
+
+/* ================ DURUMLAR ================ */
+let ws, pid=null, drawer=null, started=false, inviteKey=null, currentRoom=null;
+let currentRound=1, totalRounds=10;
+const cv=document.getElementById('c'), ctx=cv?.getContext('2d');
+let drawing=false, px=0, py=0;
+
+const logEl=document.getElementById('log');
+const playersEl=document.getElementById('players');
+const timerEl=document.getElementById('timer');
+const wordEl=document.getElementById('word');
+const drawerTools=document.getElementById('drawerTools');
+const inviteBox=document.getElementById('invite');
+const inviteLinkEl=document.getElementById('inviteLink');
+const eraser=document.getElementById('eraser');
+const errCreate=document.getElementById('error');
+const errJoin=document.getElementById('errorJoin');
+const roundBadge=document.getElementById('roundBadge');
+const roleInfo=document.getElementById('roleInfo');
+const hintBtn=document.getElementById('hintBtn');
+const undoBtn=document.getElementById('undoBtn');
+const hintInfo=document.getElementById('hintInfo');
+let choiceTimer=null;
+const choiceModal=document.getElementById('choiceModal');
+const choicesWrap=document.getElementById('choicesWrap');
+const choiceCountdown=document.getElementById('choiceCountdown');
+
+/* ================ UI HELPERS ================ */
+const show = id => document.getElementById(id).classList.remove('hidden');
+const hide = id => document.getElementById(id).classList.add('hidden');
+function goto(id){
+  ["screen-home","screen-create","screen-join","screen-game"].forEach(hide);
+  show(id);
+}
+function logLine(t){
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 5;
+  logEl.textContent += t + "\n";
+  if(atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+function drawStroke(s){
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.beginPath();
+  ctx.moveTo(s.x0,s.y0);
+  ctx.lineTo(s.x1,s.y1);
+  ctx.lineWidth=s.w||2;
+  ctx.strokeStyle=s.c||"#000";
+  ctx.stroke();
+}
+function clearCanvas(){ ctx.clearRect(0,0,cv.width,cv.height); }
+function redrawAll(strokes){
+  clearCanvas();
+  (strokes||[]).forEach(drawStroke);
+}
+function renderPlayers(players){
+  let html="<div style='font-weight:600;margin-bottom:4px;'>Oyuncular</div>";
+  Object.entries(players)
+    .sort((a,b)=>b[1].score-a[1].score)
+    .forEach(([id,p])=>{
+      const isMe = id===pid;
+      const isDrawer = id===drawer;
+      html += `<div class="${isMe?"me":""}">
+        ${p.name}${isMe?" (sen)":""}
+        ${isDrawer?'<span class="crown">👑</span>':""}
+        — <span style="color:#4b5563;">${p.score} puan</span>
+      </div>`;
+    });
+  playersEl.innerHTML = html;
+}
+function send(o){
+  if(ws && ws.readyState===1){
+    ws.send(JSON.stringify(o));
+  }
+}
+function randomRoomId(){ return 'room-' + Math.random().toString(36).slice(2,8); }
+
+function updateRoundUI(){
+  if(totalRounds && totalRounds > 0){
+    roundBadge.textContent = `Tur: ${currentRound} / ${totalRounds}`;
+  }else{
+    roundBadge.textContent = `Tur: ${currentRound}`;
+  }
+}
+
+function setDrawerUI(isDrawer, hintUsed){
+  if(isDrawer){
+    drawerTools.classList.remove('hidden');
+    cv.style.cursor='crosshair';
+  }else{
+    drawerTools.classList.add('hidden');
+    cv.style.cursor='not-allowed';
+  }
+  undoBtn.disabled = !isDrawer;
+  hintBtn.disabled = !isDrawer || !!hintUsed;
+  hintInfo.style.opacity = hintBtn.disabled ? 0.5 : 1;
+  roleInfo.textContent = isDrawer ? "Rol: Çizen (sadece sen çizebilirsin)" : "Rol: Tahminci";
+}
+
+/* ================ URL autofill ================ */
+(function autofill(){
+  const q = new URLSearchParams(location.search);
+  if(q.get("room")) document.getElementById('roomJoin').value = q.get("room");
+  if(q.get("name")) document.getElementById('nameJoin').value = q.get("name");
+  if(q.get("pwd"))  document.getElementById('pwdJoin').value  = q.get("pwd");
+  if(q.get("key"))  inviteKey = q.get("key");
+})();
+
+/* ================ NAVIGATION ================ */
+document.getElementById('goCreate').onclick = ()=> goto('screen-create');
+document.getElementById('goJoin').onclick   = ()=> goto('screen-join');
+document.getElementById('backFromCreate').onclick = ()=> goto('screen-home');
+document.getElementById('backFromJoin').onclick   = ()=> goto('screen-home');
+
+/* ================ CONNECT & JOIN ================ */
+function connectAndJoin({roomId, name, password, inviteKeyParam, mode}){
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = ()=> {
+    send({type:"join", roomId, name, password, inviteKey: inviteKeyParam, mode: mode || "join"});
+  };
+
+  ws.onclose = ()=> logLine("🔌 Bağlantı kapandı");
+
+  ws.onerror = ()=> {
+    const target = inviteKeyParam ? errJoin : errCreate;
+    target.textContent="Bağlantı hatası.";
+    target.classList.remove('hidden');
+  };
+
+  ws.onmessage = (e)=>{
+    const msg = JSON.parse(e.data);
+
+    if(msg.type==="join_error"){
+      const target = inviteKeyParam ? errJoin : errCreate;
+      if(msg.reason === "wrong_password_or_key"){
+        target.textContent = "❌ Şifre veya davet anahtarı hatalı.";
+      }
+      else if(msg.reason === "no_such_room"){
+        target.textContent = "❌ Böyle bir oda yok.";
+      }
+      else {
+        target.textContent = "Katılamadın.";
+      }
+      target.classList.remove('hidden');
+      return;
+    }
+
+    if(msg.type==="joined"){
+      goto('screen-game');
+      pid = msg.pid;
+      currentRoom = msg.room || roomId;
+      inviteKey = msg.inviteKey || null;
+      document.getElementById('roomBadge').textContent = `Oda: ${currentRoom}`;
+      logLine("✅ Odaya bağlandın: "+pid);
+
+      if(inviteKey){
+        const base = location.origin.startsWith("http") ? location.origin + location.pathname : location.origin + "/";
+        const link = `${base}?room=${encodeURIComponent(currentRoom)}&key=${encodeURIComponent(inviteKey)}`;
+        inviteLinkEl.value = link;
+        inviteBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if(msg.type==="choose_word"){
+      showChoiceModal(msg.choices, msg.timeout||10);
+      return;
+    }
+
+    if(msg.type==="system"){
+      renderPlayers(msg.players);
+      logLine("ℹ️ " + msg.msg);
+      return;
+    }
+
+    if(msg.type==="state"){
+      renderPlayers(msg.players);
+      drawer = msg.drawer;
+      wordEl.textContent = msg.word || "";
+      started = msg.started;
+      currentRound = msg.round || currentRound;
+      totalRounds = msg.totalRounds || totalRounds;
+      updateRoundUI();
+      setDrawerUI(pid===drawer, msg.hintUsed);
+
+      timerEl.textContent = msg.secondsLeft ? `⏱ ${msg.secondsLeft}s` : "⏱ —";
+
+      if(msg.strokes) redrawAll(msg.strokes);
+      return;
+    }
+
+    if(msg.type==="round_start"){
+      drawer = msg.drawer;
+      currentRound = msg.round || currentRound + 1;
+      updateRoundUI();
+      setDrawerUI(pid===drawer, false);
+      logLine("🎬 Yeni tur! Çizen: " + (drawer===pid ? "SEN" : drawer));
+      return;
+    }
+
+    if(msg.type==="stroke"){ drawStroke(msg.stroke); return; }
+    if(msg.type==="clear"){ clearCanvas(); return; }
+
+    if(msg.type==="chat"){
+      logLine(`${msg.name}: ${msg.text}`);
+      return;
+    }
+
+    if(msg.type==="guess"){
+      if(msg.correct){
+        logLine(`✅ ${msg.name} doğru bildi!`);
+      }
+      return;
+    }
+
+    if(msg.type==="round_end"){
+      if(msg.result==="timeup"){
+        logLine(`⏰ Süre bitti! Kelime: ${msg.word}`);
+      }
+      if(msg.result==="guessed"){
+        const wn = msg.winnerName || msg.winner;
+        logLine(`🎉 ${wn} kazandı! Kelime: ${msg.word}`);
+      }
+      hideChoiceModal();
+      return;
+    }
+
+    if(msg.type==="info"){
+      logLine("ℹ️ " + msg.msg);
+      if(/Kelime seçildi/i.test(msg.msg) || /otomatik seçildi/i.test(msg.msg)){
+        hideChoiceModal();
+      }
+      return;
+    }
+  };
+}
+
+/* ODA OLUŞTUR */
+document.getElementById('btnCreate').onclick=()=>{
+  let roomId = document.getElementById('roomCreate').value.trim();
+  const name = document.getElementById('nameCreate').value.trim() || "anon";
+  const pwd  = document.getElementById('pwdCreate').value.trim() || null;
+  errCreate.classList.add('hidden');
+  if(!roomId){
+    roomId = randomRoomId();
+    document.getElementById('roomCreate').value = roomId;
+  }
+  connectAndJoin({
+    roomId,
+    name,
+    password: pwd,
+    inviteKeyParam: null,
+    mode: "create"
+  });
+};
+
+/* ODAYA KATIL */
+document.getElementById('btnJoin').onclick=()=>{
+  const roomId = document.getElementById('roomJoin').value.trim();
+  const name   = document.getElementById('nameJoin').value.trim() || "anon";
+  const pwd    = document.getElementById('pwdJoin').value.trim() || null;
+  errJoin.classList.add('hidden');
+  if(!roomId){
+    errJoin.textContent = "Lütfen oda ID gir.";
+    errJoin.classList.remove('hidden');
+    return;
+  }
+  connectAndJoin({
+    roomId,
+    name,
+    password: pwd,
+    inviteKeyParam: inviteKey,
+    mode: "join"
+  });
+};
+
+/* LEAVE */
+document.getElementById('leave').onclick=()=>{
+  try{ send({type:"leave"}); }catch(e){}
+  try{ ws && ws.close(); }catch(e){}
+  goto('screen-home');
+  logEl.textContent="";
+  clearCanvas();
+  playersEl.innerHTML="";
+  wordEl.textContent="_ _ _ _";
+  timerEl.textContent="⏱ —";
+  pid=null; drawer=null; started=false; currentRoom=null;
+};
+
+/* ÇİZİM (responsive koordinat) */
+function getCanvasPos(e){
+  const r = cv.getBoundingClientRect();
+  const scaleX = cv.width / r.width;
+  const scaleY = cv.height / r.height;
+  const x = (e.clientX - r.left) * scaleX;
+  const y = (e.clientY - r.top) * scaleY;
+  return {x,y};
+}
+
+cv.addEventListener('pointerdown',(e)=>{
+  if(pid!==drawer) return;
+  cv.setPointerCapture(e.pointerId);
+  drawing=true;
+  const p = getCanvasPos(e);
+  px=p.x; py=p.y;
+});
+cv.addEventListener('pointermove',(e)=>{
+  if(!drawing || pid!==drawer) return;
+  const p = getCanvasPos(e);
+  const w=parseInt(document.getElementById('w').value,10);
+  const useEraser = eraser.checked;
+  const color = useEraser ? "#FFFFFF" : document.getElementById('color').value;
+  const stroke = {x0:px,y0:py,x1:p.x,y1:p.y,w,c:color};
+  drawStroke(stroke);
+  send({type:"stroke",...stroke});
+  px=p.x; py=p.y;
+});
+["pointerup","pointerleave","pointercancel"].forEach(ev=>{
+  cv.addEventListener(ev,(e)=>{
+    drawing=false;
+    try{ cv.releasePointerCapture(e.pointerId); }catch(err){}
+  });
+});
+
+/* Temizle */
+document.getElementById('clearBtn').onclick = ()=> {
+  send({type:"clear"});
+};
+
+/* Undo */
+undoBtn.onclick = ()=> {
+  if(!ws) return;
+  send({type:"undo"});
+};
+
+/* Hint */
+hintBtn.onclick = ()=> {
+  if(!ws) return;
+  send({type:"hint"});
+};
+
+/* CHAT */
+document.getElementById('chatForm').addEventListener('submit',(e)=>{
+  e.preventDefault();
+  const inp=document.getElementById('chatInput');
+  const t=inp.value.trim(); if(!t) return;
+  send({type:"chat", text:t});
+  inp.value="";
+});
+
+/* DAVET KOPYALA */
+document.getElementById('copyInvite').onclick=()=>{
+  inviteLinkEl.select();
+  document.execCommand('copy');
+  logLine("📋 Davet linki panoya kopyalandı.");
+};
+
+/* Kelime seçimi modal fonksiyonları */
+function showChoiceModal(choices, timeoutSec){
+  choicesWrap.innerHTML="";
+  (choices||[]).forEach(w=>{
+    const b=document.createElement('button');
+    b.className='btn primary choice-btn';
+    b.textContent=w;
+    b.onclick=()=>{ send({type:"choose_word", choice:w}); hideChoiceModal(); };
+    choicesWrap.appendChild(b);
+  });
+  let t = timeoutSec||10;
+  choiceCountdown.textContent=t;
+  if(choiceTimer) clearInterval(choiceTimer);
+  choiceTimer=setInterval(()=>{
+    t--; choiceCountdown.textContent=t;
+    if(t<=0){
+      clearInterval(choiceTimer);
+      choiceTimer=null;
+      hideChoiceModal();
+    }
+  },1000);
+  choiceModal.classList.remove('hidden');
+}
+function hideChoiceModal(){
+  if(choiceTimer) clearInterval(choiceTimer);
+  choiceTimer=null;
+  choiceModal.classList.add('hidden');
+}
+</script>
+</body>
+</html>
